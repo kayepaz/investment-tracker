@@ -1,4 +1,5 @@
 import { APP_NAME } from './appInfo';
+import { SpikePanel } from './spike/SpikePanel';
 
 export function App() {
   return (
@@ -9,10 +10,11 @@ export function App() {
       </header>
       <section className="status" aria-label="Project status">
         <p>
-          This is an early development build. Nothing here stores data yet, so please don't enter real
+          This is an early development build. Nothing here stores financial data yet, so please don't enter real
           financial information.
         </p>
       </section>
+      <SpikePanel />
     </main>
   );
 }

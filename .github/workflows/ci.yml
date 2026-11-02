@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Show installed versions
+        run: npm ls --depth=0
+
       - name: Type-check
         run: npm run typecheck
 
