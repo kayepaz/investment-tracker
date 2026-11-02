@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PRICE_PROVIDERS,
   describeResult,
-  eodhdLastCloseUrl,
   fetchAndParse,
+  parseAlphaVantageDaily,
   parseBankOfCanada,
   parseEodhdLastClose,
+  parseFinnhubQuote,
+  parseFmpQuote,
 } from './providers';
 
 describe('parseBankOfCanada', () => {
@@ -30,11 +33,67 @@ describe('parseEodhdLastClose', () => {
   });
 });
 
-describe('eodhdLastCloseUrl', () => {
-  it('builds the last-close URL', () => {
-    expect(eodhdLastCloseUrl('XIU.TO', 'k')).toBe(
-      'https://eodhd.com/api/eod/XIU.TO?api_token=k&fmt=json&filter=last_close',
-    );
+describe('parseAlphaVantageDaily', () => {
+  it('reads the latest close and counts the days returned', () => {
+    const json = {
+      'Time Series (Daily)': {
+        '2026-10-30': { '4. close': '54.07' },
+        '2026-10-29': { '4. close': '53.90' },
+      },
+    };
+    expect(parseAlphaVantageDaily('XIU.TRT', json)).toEqual({
+      ok: true,
+      summary: 'XIU.TRT close 54.07 on 2026-10-30; 2 days of history returned',
+    });
+  });
+
+  it('surfaces rate-limit and error messages', () => {
+    expect(parseAlphaVantageDaily('X', { Information: 'rate limit' })).toEqual({
+      ok: false,
+      kind: 'bad-response',
+      detail: 'rate limit',
+    });
+    expect(parseAlphaVantageDaily('X', { 'Error Message': 'Invalid API call' })).toMatchObject({
+      detail: 'Invalid API call',
+    });
+  });
+});
+
+describe('parseFmpQuote', () => {
+  it('reads the price', () => {
+    expect(parseFmpQuote('XIU.TO', [{ symbol: 'XIU.TO', price: 54.07 }])).toEqual({
+      ok: true,
+      summary: 'XIU.TO price 54.07',
+    });
+  });
+
+  it('reports an empty array and error messages', () => {
+    expect(parseFmpQuote('XIU.TO', [])).toMatchObject({ ok: false });
+    expect(parseFmpQuote('XIU.TO', { 'Error Message': 'Restricted' })).toMatchObject({ detail: 'Restricted' });
+  });
+});
+
+describe('parseFinnhubQuote', () => {
+  it('reads the price and treats 0 as not covered', () => {
+    expect(parseFinnhubQuote('AAPL', { c: 230.1 })).toEqual({ ok: true, summary: 'AAPL price 230.1' });
+    expect(parseFinnhubQuote('XIU.TO', { c: 0 })).toMatchObject({ ok: false });
+    expect(parseFinnhubQuote('AAPL', { error: 'Invalid API key' })).toMatchObject({ detail: 'Invalid API key' });
+  });
+});
+
+describe('PRICE_PROVIDERS', () => {
+  it('builds URLs containing the symbol and key', () => {
+    for (const provider of PRICE_PROVIDERS) {
+      const url = provider.url(provider.defaultSymbol, 'KEY123');
+      expect(url.startsWith('https://')).toBe(true);
+      expect(url).toContain('KEY123');
+      expect(decodeURIComponent(url)).toContain(provider.defaultSymbol);
+    }
+  });
+
+  it('has unique ids', () => {
+    const ids = PRICE_PROVIDERS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
