@@ -1,31 +1,35 @@
 import { useEffect, useState } from 'react';
-import {
-  BANK_OF_CANADA_USDCAD_URL,
-  describeResult,
-  eodhdLastCloseUrl,
-  fetchAndParse,
-  parseBankOfCanada,
-  parseEodhdLastClose,
-} from './providers';
+import { BANK_OF_CANADA_USDCAD_URL, PRICE_PROVIDERS, describeResult, fetchAndParse, parseBankOfCanada } from './providers';
 import type { DbTestResult, ProviderResult } from './types';
 
-const KEY_STORAGE = 'spike.eodhdKey';
-
-function readSavedKey(): string {
-  try {
-    return localStorage.getItem(KEY_STORAGE) ?? '';
-  } catch {
-    return '';
-  }
+// The EODHD key keeps its original storage name so keys entered earlier are remembered.
+function keyStorageName(providerId: string): string {
+  return providerId === 'eodhd' ? 'spike.eodhdKey' : `spike.key.${providerId}`;
 }
 
-function saveKey(key: string): void {
+function readSavedKeys(): Record<string, string> {
+  const keys: Record<string, string> = {};
+  for (const provider of PRICE_PROVIDERS) {
+    try {
+      keys[provider.id] = localStorage.getItem(keyStorageName(provider.id)) ?? '';
+    } catch {
+      keys[provider.id] = '';
+    }
+  }
+  return keys;
+}
+
+function saveKey(providerId: string, key: string): void {
   try {
-    localStorage.setItem(KEY_STORAGE, key);
+    localStorage.setItem(keyStorageName(providerId), key);
   } catch {
     // Storage unavailable; the key just won't be remembered.
   }
 }
+
+const DEFAULT_SYMBOLS: Record<string, string> = Object.fromEntries(
+  PRICE_PROVIDERS.map((provider) => [provider.id, provider.defaultSymbol]),
+);
 
 type StorageInfo = {
   opfsAvailable: boolean;
@@ -87,10 +91,10 @@ export function SpikePanel() {
   const [dbResult, setDbResult] = useState<DbTestResult | null>(null);
   const [dbRunning, setDbRunning] = useState(false);
   const [bocResult, setBocResult] = useState<ProviderResult | null>(null);
-  const [eodhdResult, setEodhdResult] = useState<ProviderResult | null>(null);
+  const [priceResults, setPriceResults] = useState<Record<string, ProviderResult | null>>({});
   const [providersRunning, setProvidersRunning] = useState(false);
-  const [apiKey, setApiKey] = useState(readSavedKey);
-  const [symbol, setSymbol] = useState('XIU.TO');
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>(readSavedKeys);
+  const [symbols, setSymbols] = useState<Record<string, string>>(DEFAULT_SYMBOLS);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -113,14 +117,19 @@ export function SpikePanel() {
 
   async function handleProviders() {
     setProvidersRunning(true);
-    saveKey(apiKey.trim());
     const bocPromise = fetchAndParse(BANK_OF_CANADA_USDCAD_URL, parseBankOfCanada);
-    const eodhdPromise: Promise<ProviderResult> = apiKey.trim()
-      ? fetchAndParse(eodhdLastCloseUrl(symbol.trim(), apiKey.trim()), (json) => parseEodhdLastClose(symbol.trim(), json))
-      : Promise.resolve({ ok: false, kind: 'missing-key', detail: 'No EODHD API key entered' });
-    const [boc, eodhd] = await Promise.all([bocPromise, eodhdPromise]);
+    const pricePromises = PRICE_PROVIDERS.map(async (provider): Promise<[string, ProviderResult]> => {
+      const key = (apiKeys[provider.id] ?? '').trim();
+      const symbol = (symbols[provider.id] ?? provider.defaultSymbol).trim();
+      saveKey(provider.id, key);
+      if (!key) {
+        return [provider.id, { ok: false, kind: 'missing-key', detail: 'No API key entered' }];
+      }
+      return [provider.id, await fetchAndParse(provider.url(symbol, key), (json) => provider.parse(symbol, json))];
+    });
+    const [boc, prices] = await Promise.all([bocPromise, Promise.all(pricePromises)]);
     setBocResult(boc);
-    setEodhdResult(eodhd);
+    setPriceResults(Object.fromEntries(prices));
     setProvidersRunning(false);
   }
 
@@ -133,7 +142,10 @@ export function SpikePanel() {
     `Storage used: ${storageInfo?.usageMb ?? '?'} MB of ${storageInfo?.quotaMb ?? '?'} MB`,
     `Database: ${describeDb(dbResult)}`,
     `Bank of Canada: ${describeResult(bocResult)}`,
-    `EODHD (${symbol.trim()}): ${describeResult(eodhdResult)}`,
+    ...PRICE_PROVIDERS.map(
+      (provider) =>
+        `${provider.name} (${(symbols[provider.id] ?? provider.defaultSymbol).trim()}): ${describeResult(priceResults[provider.id] ?? null)}`,
+    ),
   ].join('\n');
 
   async function handleCopy() {
@@ -177,32 +189,50 @@ export function SpikePanel() {
 
       <div className="spike-step">
         <h3>2. Data providers</h3>
-        <label className="field">
-          EODHD API key
-          <input
-            type="password"
-            autoComplete="off"
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            placeholder="Paste your key"
-          />
-        </label>
-        <label className="field">
-          Symbol
-          <input value={symbol} onChange={(event) => setSymbol(event.target.value)} />
-        </label>
-        <p className="muted small">Your key is saved only in this browser and is not included in the report.</p>
+        <p className="muted">
+          Enter a free API key for each provider you signed up for; leave the others blank. Keys are saved only in
+          this browser and are never included in the report.
+        </p>
+        <p className={bocResult ? (bocResult.ok ? 'result ok' : 'result fail') : 'result'}>
+          Bank of Canada (no key needed): {describeResult(bocResult)}
+        </p>
+        {PRICE_PROVIDERS.map((provider) => {
+          const result = priceResults[provider.id] ?? null;
+          return (
+            <div key={provider.id} className="provider">
+              <h4>
+                {provider.name}{' '}
+                <a href={provider.signupUrl} target="_blank" rel="noreferrer" className="small">
+                  Get a free key
+                </a>
+              </h4>
+              <p className="muted small">{provider.note}</p>
+              <label className="field">
+                API key
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={apiKeys[provider.id] ?? ''}
+                  onChange={(event) => setApiKeys({ ...apiKeys, [provider.id]: event.target.value })}
+                  placeholder="Paste your key"
+                />
+              </label>
+              <label className="field">
+                Symbol
+                <input
+                  value={symbols[provider.id] ?? provider.defaultSymbol}
+                  onChange={(event) => setSymbols({ ...symbols, [provider.id]: event.target.value })}
+                />
+              </label>
+              <p className={result ? (result.ok ? 'result ok' : 'result fail') : 'result'}>{describeResult(result)}</p>
+            </div>
+          );
+        })}
         <div className="button-row">
           <button type="button" onClick={handleProviders} disabled={providersRunning}>
             {providersRunning ? 'Checking…' : 'Check providers'}
           </button>
         </div>
-        <p className={bocResult ? (bocResult.ok ? 'result ok' : 'result fail') : 'result'}>
-          Bank of Canada: {describeResult(bocResult)}
-        </p>
-        <p className={eodhdResult ? (eodhdResult.ok ? 'result ok' : 'result fail') : 'result'}>
-          EODHD: {describeResult(eodhdResult)}
-        </p>
       </div>
 
       <div className="spike-step">

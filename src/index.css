@@ -151,3 +151,18 @@ button:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.provider {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e6e8ec;
+}
+
+.provider h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.provider h4 a {
+  font-weight: 500;
+}
