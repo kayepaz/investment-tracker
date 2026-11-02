@@ -27,7 +27,7 @@ See [docs/decisions.md](docs/decisions.md) for the full set of product decisions
 
 ## Try it
 
-The latest version from `main` is published at **https://kayepaz.github.io/investment-tracker/**. Your data never leaves your device; the site only serves the app's files.
+The latest version from `main` is published at **<https://kayepaz.github.io/investment-tracker/>**. Your data never leaves your device; the site only serves the app's files.
 
 ## Development
 

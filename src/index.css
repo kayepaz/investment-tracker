@@ -50,31 +50,6 @@ body {
   font-size: 13px;
 }
 
-.spike {
-  margin-top: 32px;
-}
-
-.spike h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
-}
-
-.spike-step {
-  margin-top: 20px;
-  padding: 16px;
-  border: 1px solid #e6e8ec;
-  border-radius: 12px;
-}
-
-.spike-step h3 {
-  margin: 0 0 6px;
-  font-size: 17px;
-}
-
-.spike-step p {
-  line-height: 1.5;
-}
-
 .button-row {
   display: flex;
   flex-wrap: wrap;
@@ -105,24 +80,6 @@ button:disabled {
   cursor: default;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.field input {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid #c8ced6;
-  border-radius: 10px;
-  font: inherit;
-  font-weight: 400;
-}
-
 .result {
   margin: 8px 0;
   padding: 10px 12px;
@@ -142,27 +99,7 @@ button:disabled {
   color: #8a1c12;
 }
 
-.report {
-  margin: 0;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--color-subtle);
-  font-size: 12px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
 
-.provider {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #e6e8ec;
-}
-
-.provider h4 {
-  margin: 0 0 4px;
-  font-size: 16px;
-}
-
-.provider h4 a {
-  font-weight: 500;
+.status p + p {
+  margin-top: 8px;
 }

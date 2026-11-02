@@ -39,7 +39,8 @@ These come from the project's core principles. Changing them needs an issue and 
 
 - **No backend and no telemetry.** Don't add network calls except to user-configured market data providers.
 - **No floating-point money.** Monetary amounts are never stored or calculated as JavaScript `number`.
-- **Schema changes go through migrations.** Never edit an existing migration; add a new one.
+- **Schema changes go through migrations.** There are two databases (user data and market cache), each with its own migrations in `src/db/migrations/`. Never edit a released migration; add a new one. See [docs/data-model.md](docs/data-model.md).
+- **The market cache never references user data.** Anything that can't be re-downloaded belongs in the user database.
 - **User data never leaves the device** without an explicit user action (such as saving a backup).
 
 ## Plug-ins
