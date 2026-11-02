@@ -25,6 +25,10 @@ You group your money into **buckets**, attach **strategies** made of **goals** (
 
 See [docs/decisions.md](docs/decisions.md) for the full set of product decisions, and [VISION.md](VISION.md) for where the project is headed.
 
+## Try it
+
+The latest version from `main` is published at **https://kayepaz.github.io/investment-tracker/**. Your data never leaves your device; the site only serves the app's files.
+
 ## Development
 
 Requirements: Node.js 22 or later.
