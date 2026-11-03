@@ -33,3 +33,11 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # The built app, so a pull request can be tried before merging.
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
