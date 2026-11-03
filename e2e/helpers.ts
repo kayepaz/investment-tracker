@@ -93,6 +93,7 @@ export async function mockPriceProviders(page: Page, opts: { limited?: string[] 
 export async function saveApiKey(page: Page, providerName: string, key: string) {
   await tab(page, 'Settings');
   await page.getByLabel(`${providerName} API key`).fill(key);
-  await page.locator('.provider-row', { hasText: providerName }).getByRole('button', { name: 'Save key' }).click();
+  const row = page.locator('.provider-row').filter({ has: page.getByRole('heading', { name: new RegExp(`^${providerName}`) }) });
+  await row.getByRole('button', { name: 'Save key' }).click();
   await expect(page.getByText(`Key saved (ending …${key.slice(-4)})`)).toBeVisible();
 }
