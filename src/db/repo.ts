@@ -55,6 +55,27 @@ export function setSetting(db: SqlConnection, key: string, value: string, now: n
 }
 
 // ---------------------------------------------------------------------------------------------
+// API keys (their own table, so unencrypted backups can leave them out)
+
+export function getApiKeys(db: SqlConnection): Record<string, string> {
+  return Object.fromEntries(db.all('SELECT provider_id, api_key FROM api_keys').map((row) => [str(row.provider_id), str(row.api_key)]));
+}
+
+export function setApiKey(db: SqlConnection, providerId: string, apiKey: string, now: number): void {
+  const key = apiKey.trim();
+  if (!/^[A-Za-z0-9._-]{4,200}$/.test(key)) invalid('That doesn’t look like an API key. Paste it exactly as the provider shows it.');
+  db.run(
+    `INSERT INTO api_keys (provider_id, api_key, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT (provider_id) DO UPDATE SET api_key = excluded.api_key, updated_at = excluded.updated_at`,
+    [providerId, key, now],
+  );
+}
+
+export function deleteApiKey(db: SqlConnection, providerId: string): void {
+  db.run('DELETE FROM api_keys WHERE provider_id = ?', [providerId]);
+}
+
+// ---------------------------------------------------------------------------------------------
 // Accounts
 
 export type Account = {

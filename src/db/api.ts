@@ -16,12 +16,27 @@ import {
   type HoldingAssignment,
   type ManualPrice,
 } from './bucketsRepo';
-import { lastSuccessfulFetch, latestFxRates, logFetch, saveFxRates, type FetchOutcome, type FxRate } from './cacheRepo';
+import {
+  lastPriceFetches,
+  lastSuccessfulFetch,
+  latestDailyPrices,
+  latestFxRates,
+  logFetch,
+  requestsSince,
+  saveFxRates,
+  savePrices,
+  type CachedPrice,
+  type FetchOutcome,
+  type FxRate,
+} from './cacheRepo';
 import type { SqlConnection } from './migrate';
 import {
   addTransaction,
   createAccount,
+  deleteApiKey,
   deleteTransaction,
+  getApiKeys,
+  setApiKey,
   findOrCreateSecurity,
   getAccount,
   getSetting,
@@ -41,6 +56,9 @@ export const api = {
   // Settings
   getSetting: (c: Connections, key: string) => getSetting(c.user, key),
   setSetting: (c: Connections, key: string, value: string) => setSetting(c.user, key, value, Date.now()),
+  getApiKeys: (c: Connections) => getApiKeys(c.user),
+  setApiKey: (c: Connections, providerId: string, apiKey: string) => setApiKey(c.user, providerId, apiKey, Date.now()),
+  deleteApiKey: (c: Connections, providerId: string) => deleteApiKey(c.user, providerId),
 
   // Accounts, securities, transactions
   listAccounts: (c: Connections) => listAccounts(c.user),
@@ -73,6 +91,10 @@ export const api = {
   ) => logFetch(c.cache, entry, Date.now()),
   lastSuccessfulFetch: (c: Connections, providerId: string, requestKind: string) =>
     lastSuccessfulFetch(c.cache, providerId, requestKind),
+  savePrices: (c: Connections, prices: CachedPrice[]) => savePrices(c.cache, prices, Date.now()),
+  latestDailyPrices: (c: Connections) => latestDailyPrices(c.cache),
+  requestsSince: (c: Connections, providerId: string, since: number) => requestsSince(c.cache, providerId, since),
+  lastPriceFetches: (c: Connections) => lastPriceFetches(c.cache),
 };
 
 export type Api = typeof api;

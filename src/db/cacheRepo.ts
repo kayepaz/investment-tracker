@@ -64,3 +64,71 @@ export function lastSuccessfulFetch(db: SqlConnection, providerId: string, reque
   )[0]?.at;
   return value === null || value === undefined ? null : Number(value);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Prices
+
+export type CachedPrice = {
+  instrumentKey: string;
+  interval: '1d' | '1w';
+  priceDate: string;
+  /** Exact decimal string. */
+  close: string;
+  currency: string;
+  providerId: string;
+};
+
+/** Stores closing prices, replacing any for the same instrument, interval and date. Invalid rows are skipped. */
+export function savePrices(db: SqlConnection, prices: CachedPrice[], now: number): number {
+  const valid = prices.filter(
+    (p) => p.instrumentKey && isIsoDate(p.priceDate) && isDecimalString(p.close) && !p.close.startsWith('-') && isCurrencyCode(p.currency),
+  );
+  withTransaction(db, () => {
+    for (const p of valid) {
+      db.run(
+        `INSERT INTO prices (instrument_key, interval, price_date, close, currency, provider_id, fetched_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (instrument_key, interval, price_date) DO UPDATE SET
+           close = excluded.close, currency = excluded.currency, provider_id = excluded.provider_id, fetched_at = excluded.fetched_at`,
+        [p.instrumentKey, p.interval, p.priceDate, p.close, p.currency, p.providerId, now],
+      );
+    }
+  });
+  return valid.length;
+}
+
+/** The latest daily price for each instrument. */
+export function latestDailyPrices(db: SqlConnection): CachedPrice[] {
+  return db
+    .all(
+      `SELECT instrument_key, interval, price_date, close, currency, provider_id FROM prices p
+       WHERE interval = '1d' AND price_date = (
+         SELECT max(price_date) FROM prices WHERE instrument_key = p.instrument_key AND interval = '1d')`,
+    )
+    .map((row) => ({
+      instrumentKey: str(row.instrument_key),
+      interval: '1d' as const,
+      priceDate: str(row.price_date),
+      close: str(row.close),
+      currency: str(row.currency),
+      providerId: str(row.provider_id),
+    }));
+}
+
+/** Requests made to a provider since a time (any outcome), for staying within daily limits. */
+export function requestsSince(db: SqlConnection, providerId: string, since: number): number {
+  return Number(
+    db.all('SELECT count(*) AS n FROM fetch_log WHERE provider_id = ? AND requested_at >= ?', [providerId, since])[0]?.n ?? 0,
+  );
+}
+
+/** When each instrument's price was last fetched successfully, by any provider. */
+export function lastPriceFetches(db: SqlConnection): { instrumentKey: string; at: number }[] {
+  return db
+    .all(
+      `SELECT instrument_key, max(requested_at) AS at FROM fetch_log
+       WHERE request_kind = 'price_daily' AND outcome = 'ok' AND instrument_key IS NOT NULL
+       GROUP BY instrument_key`,
+    )
+    .map((row) => ({ instrumentKey: str(row.instrument_key), at: Number(row.at) }));
+}

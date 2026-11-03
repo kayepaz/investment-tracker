@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { Decimal } from '../../money/decimal';
 import type { BucketNode, HoldingRow } from '../../portfolio/tree';
 import { refreshFxRatesIfStale } from '../../market/refresh';
+import { providerById } from '../../market/providers';
+import { updatePrices, type PriceUpdateSummary } from '../../market/updatePrices';
 import { formatDate, formatMoney, formatPercent, formatSignedMoney } from '../format';
 import { loadPortfolio } from '../portfolioData';
 import { href } from '../router';
@@ -95,16 +97,86 @@ function BucketItem({
   );
 }
 
+function PriceStatus({
+  progress,
+  summary,
+  error,
+  onUpdate,
+}: {
+  progress: { done: number; total: number } | null;
+  summary: PriceUpdateSummary | null;
+  error: string | null;
+  onUpdate: () => void;
+}) {
+  if (progress) {
+    return (
+      <p className="muted small" role="status">
+        Updating prices… {progress.done} of {progress.total}
+      </p>
+    );
+  }
+  if (error) return <p className="result fail small">Prices couldn’t be updated: {error}</p>;
+  if (!summary) return null;
+
+  const { plan, result } = summary;
+  const count = (reason: string) => plan.skipped.filter((s) => s.reason === reason).length;
+  const noKey = count('no_key');
+  const limit = count('limit');
+  const manualOnly = count('not_covered') + count('not_listed');
+  const notes: string[] = [];
+  if (result.updated > 0) notes.push(`Updated ${result.updated} price${result.updated === 1 ? '' : 's'}.`);
+  for (const stop of result.stopped) notes.push(`${providerById(stop.providerId)?.name ?? stop.providerId}: ${stop.message}`);
+  for (const failure of result.failures) notes.push(`${failure.security.symbol ?? failure.security.name}: ${failure.message}`);
+  if (limit > 0) notes.push(`${limit} more will update tomorrow (free daily limit).`);
+  if (manualOnly > 0) notes.push(`${manualOnly} holding${manualOnly === 1 ? ' isn’t' : 's aren’t'} covered by a provider; enter ${manualOnly === 1 ? 'its price' : 'their prices'} by hand.`);
+
+  return (
+    <div className="price-status small">
+      {noKey > 0 && (
+        <p className="badge-warn">
+          {noKey} holding{noKey === 1 ? '' : 's'} could get prices automatically. <a href={href({ name: 'settings' })}>Add a free API key in Settings</a>.
+        </p>
+      )}
+      {notes.map((note) => (
+        <p key={note} className="muted">
+          {note}
+        </p>
+      ))}
+      {plan.tasks.length === 0 && noKey === 0 && plan.skipped.some((s) => s.reason === 'recent') && <p className="muted">Prices are up to date.</p>}
+      <button type="button" className="link-button" onClick={onUpdate}>
+        Check for new prices
+      </button>
+    </div>
+  );
+}
+
 export function BucketsScreen() {
   const [state, reload] = useAsync(loadPortfolio, []);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [fxProblem, setFxProblem] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [priceSummary, setPriceSummary] = useState<PriceUpdateSummary | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
+  async function runPriceUpdate() {
+    setPriceError(null);
+    try {
+      const summary = await updatePrices((done, total) => setProgress(total > 0 ? { done, total } : null));
+      setPriceSummary(summary);
+      if (summary.result.updated > 0) reload();
+    } catch (e) {
+      setPriceError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setProgress(null);
+    }
+  }
 
   useEffect(() => {
     void refreshFxRatesIfStale().then((result) => {
       if (result === 'updated') reload();
       setFxProblem(result === 'failed');
     });
+    void runPriceUpdate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -172,13 +244,14 @@ export function BucketsScreen() {
         </>
       )}
 
+      <PriceStatus progress={progress} summary={priceSummary} error={priceError} onUpdate={() => void runPriceUpdate()} />
+
       <p className="muted small">
         {fxProblem
           ? 'Couldn’t reach the Bank of Canada for exchange rates; using the last ones saved.'
           : fxDate
             ? `Exchange rates: Bank of Canada, ${formatDate(fxDate)}.`
-            : 'Exchange rates: not downloaded yet.'}{' '}
-        Prices are the latest you entered; automatic prices come in the next step.
+            : 'Exchange rates: not downloaded yet.'}
       </p>
     </section>
   );

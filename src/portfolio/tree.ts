@@ -14,7 +14,7 @@ import { Decimal } from '../money/decimal';
 const CONVERSION_SCALE = 10;
 const HUNDRED = Decimal.fromInteger(100);
 
-export type PriceQuote = { price: Decimal; date: string; source: 'manual' | 'provider' };
+export type PriceQuote = { price: Decimal; date: string; source: 'manual' | 'provider'; providerId?: string };
 
 export type TreeInputs = {
   buckets: Bucket[];

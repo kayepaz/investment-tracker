@@ -94,6 +94,9 @@ This is the record of product and design decisions for Investment Tracker. It wa
 - 200-day moving average: daily history accumulates in the cache from the first fetch; until 200 days exist, the 40-week moving average from weekly prices is used and labelled as such.
 - Within the 25 requests/day limit, about 20 holdings can update daily; more are spread across days, and US holdings use Finnhub when a key is set.
 - Prices and FX are cached locally: history once per holding, then one daily update.
+- **Price updates** run when the Buckets screen opens (and on request). A holding's price is fetched at most once every 20 hours; the longest-unfetched go first, so a portfolio larger than the daily limit rotates. Requests are paced, and a provider that reports its limit or rejects the key isn't asked again in that run. US listings use Finnhub when its key is set.
+- **Which price is used:** the newer of the price entered by hand and the downloaded one; on the same day, the hand-entered price wins.
+- Listings Alpha Vantage doesn't cover (e.g. Cboe Canada) and unlisted holdings are priced by hand.
 - If a future provider can't be reached from the browser, an optional user-run relay (e.g. a Cloudflare Worker holding the user's key) is the fallback; manual prices always work.
 - Rejected for v1: Twelve Data (free plan US-only, non-display use only).
 

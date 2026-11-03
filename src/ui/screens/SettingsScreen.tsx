@@ -3,6 +3,7 @@ import { db, errorMessage } from '../../db/client';
 import type { DbStatus } from '../../db/protocol';
 import { DEFAULT_NATIVE_CURRENCY, SETTING_NATIVE_CURRENCY } from '../../db/repo';
 import { CURRENCIES } from '../currencies';
+import { ProvidersCard } from '../ProvidersCard';
 import { useAsync } from '../useAsync';
 
 export function SettingsScreen({ status, persisted }: { status: DbStatus | null; persisted: boolean | null }) {
@@ -42,6 +43,8 @@ export function SettingsScreen({ status, persisted }: { status: DbStatus | null;
         {saved && <p className="result ok small">Saved.</p>}
         {error && <p className="result fail small">{error}</p>}
       </div>
+
+      <ProvidersCard />
 
       <div className="card">
         <h2>Storage</h2>

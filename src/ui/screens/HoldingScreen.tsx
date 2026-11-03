@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { db, errorMessage } from '../../db/client';
+import { providerById } from '../../market/providers';
 import { flattenBuckets, type BucketNode, type HoldingRow } from '../../portfolio/tree';
 import { formatDate, formatMoney, formatNumber, formatPercent, formatSignedMoney, today } from '../format';
 import { loadPortfolio } from '../portfolioData';
@@ -91,7 +92,11 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
       </div>
       <p className="muted small">
         {formatNumber(row.quantity)} {row.isCash ? row.currency : 'units'}
-        {row.price ? ` · price ${formatNumber(row.price.price, 4)} ${row.currency} on ${formatDate(row.price.date)} (entered by hand)` : ''}
+        {row.price
+          ? ` · price ${formatNumber(row.price.price, 4)} ${row.currency} on ${formatDate(row.price.date)} (${
+              row.price.source === 'manual' ? 'entered by hand' : (providerById(row.price.providerId ?? '')?.name ?? 'downloaded')
+            })`
+          : ''}
       </p>
 
       {message && <p className={`result small ${message.ok ? 'ok' : 'fail'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
@@ -112,7 +117,7 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
           <div className="button-row">
             <button type="submit">Save price</button>
           </div>
-          <p className="hint">Until automatic prices arrive, the latest price you enter is used.</p>
+          <p className="hint">The newer of your price and the downloaded one is used; on the same day, yours wins.</p>
         </form>
       )}
 
