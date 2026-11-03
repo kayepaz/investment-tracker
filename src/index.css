@@ -378,3 +378,136 @@ a {
   color: var(--color-accent);
   font-weight: 700;
 }
+
+button.danger {
+  background: #a3261a;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.gain {
+  color: #17703a;
+  font-weight: 600;
+}
+
+.loss {
+  color: #b42318;
+  font-weight: 600;
+}
+
+.portfolio-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid #e6e8ec;
+}
+
+.portfolio-total {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.tree-legend {
+  margin: 4px 0 8px;
+}
+
+.tree {
+  border-top: 1px solid #e6e8ec;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 16px 8px 4px;
+  border-bottom: 1px solid #e6e8ec;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.tree-row.nested {
+  background: #fafbfc;
+}
+
+.tree-row.holding {
+  padding-right: 16px;
+}
+
+.tree-toggle {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-toggle:disabled {
+  opacity: 0.3;
+}
+
+.tree-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tree-name {
+  overflow-wrap: anywhere;
+}
+
+.tree-name.unassigned {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.tree-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--color-muted);
+}
+
+.tree-value {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-subtle);
+  overflow-wrap: anywhere;
+}
+
+.bucket-edit {
+  padding-top: 10px;
+  padding-bottom: 6px;
+  border-top: 1px solid #eef0f3;
+}
+
+.bucket-edit:first-child {
+  border-top: 0;
+}

@@ -115,6 +115,9 @@ This is the record of product and design decisions for Investment Tracker. It wa
 
 - A user-selected native currency for all summaries.
 - Current FX for current values; historical FX for gains and charts.
+- Conversions go through CAD (the Bank of Canada publishes every rate against CAD). Latest rates are downloaded at most every 6 hours into the market cache.
+- On the bucket tree, a bucket's change and gain/loss compare today's value with cost converted at today's rate, so they include currency movement. A single holding's change is its price movement in its own currency. Tax figures use the rate stored on each transaction.
+- A holding without a price or exchange rate is left out of totals and flagged, never guessed.
 
 ## Alerts
 

@@ -8,7 +8,7 @@ import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import { migrate, type MigrationResult, type SqlConnection, type SqlValue } from './migrate';
 import { CACHE_MIGRATIONS } from './migrations/cache';
 import { USER_MIGRATIONS } from './migrations/user';
-import { api, type ApiMethod } from './api';
+import { api, type ApiMethod, type Connections } from './api';
 import type { DbStatus, WorkerRequest, WorkerResponse } from './protocol';
 
 export const POOL_NAME = 'investment-tracker';
@@ -96,10 +96,13 @@ async function call(id: number, method: string, args: unknown[]): Promise<Worker
   try {
     opening ??= open();
     const status = await opening;
-    if (!status.ok || !userDb) throw new Error(`Storage is not available: ${status.ok ? 'not open' : status.error}`);
+    if (!status.ok || !userDb || !cacheDb) {
+      throw new Error(`Storage is not available: ${status.ok ? 'not open' : status.error}`);
+    }
     if (!Object.prototype.hasOwnProperty.call(api, method)) throw new Error(`Unknown operation ${method}`);
-    const fn = api[method as ApiMethod] as (db: SqlConnection, ...rest: unknown[]) => unknown;
-    return { type: 'result', id, ok: true, value: fn(connection(userDb), ...args) };
+    const fn = api[method as ApiMethod] as (c: Connections, ...rest: unknown[]) => unknown;
+    const connections: Connections = { user: connection(userDb), cache: connection(cacheDb) };
+    return { type: 'result', id, ok: true, value: fn(connections, ...args) };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     return { type: 'result', id, ok: false, error: { name: err.name, message: err.message } };

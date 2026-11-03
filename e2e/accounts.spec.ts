@@ -1,15 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { openApp, tab } from './helpers';
 
 // Each test gets a fresh browser context, so storage starts empty.
-
-async function openApp(page: Page) {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Buckets' })).toBeVisible();
-}
-
-async function tab(page: Page, name: string) {
-  await page.locator('nav.tab-bar').getByRole('link', { name }).click();
-}
 
 test('opens storage and shows the tabs', async ({ page }) => {
   await openApp(page);

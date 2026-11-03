@@ -251,7 +251,7 @@ export type TransactionRecord = {
   security: Security;
 };
 
-function toTransaction(row: Record<string, SqlValue>): TransactionRecord {
+export function toTransaction(row: Record<string, SqlValue>): TransactionRecord {
   return {
     id: str(row.id),
     accountId: str(row.account_id),
@@ -280,16 +280,14 @@ function toTransaction(row: Record<string, SqlValue>): TransactionRecord {
   };
 }
 
+/** Selects transactions joined with their security, in the shape toTransaction reads. */
+export const TRANSACTION_SELECT = `SELECT t.*, s.instrument_key AS s_instrument_key, s.kind AS s_kind, s.symbol AS s_symbol,
+       s.exchange AS s_exchange, s.name AS s_name, s.currency AS s_currency
+FROM transactions t JOIN securities s ON s.id = t.security_id`;
+
 export function listAccountTransactions(db: SqlConnection, accountId: string): TransactionRecord[] {
   return db
-    .all(
-      `SELECT t.*, s.instrument_key AS s_instrument_key, s.kind AS s_kind, s.symbol AS s_symbol,
-              s.exchange AS s_exchange, s.name AS s_name, s.currency AS s_currency
-       FROM transactions t JOIN securities s ON s.id = t.security_id
-       WHERE t.account_id = ?
-       ORDER BY t.trade_date, t.created_at, t.id`,
-      [accountId],
-    )
+    .all(`${TRANSACTION_SELECT} WHERE t.account_id = ? ORDER BY t.trade_date, t.created_at, t.id`, [accountId])
     .map(toTransaction);
 }
 
