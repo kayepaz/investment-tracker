@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { APP_NAME } from './appInfo';
 import { openDatabases, requestPersistentStorage } from './db/client';
 import type { DbStatus } from './db/protocol';
-
-function describeStatus(status: DbStatus | null): string {
-  if (!status) return 'Opening storage…';
-  if (!status.ok) return `Storage problem while trying to ${status.stage}: ${status.error}`;
-  return `Storage ready: your data (schema v${status.user.to}) and market cache (schema v${status.cache.to}), SQLite ${status.sqliteVersion}.`;
-}
+import { useRoute } from './ui/router';
+import { AccountScreen } from './ui/screens/AccountScreen';
+import { AccountsScreen } from './ui/screens/AccountsScreen';
+import { AddTransactionScreen } from './ui/screens/AddTransactionScreen';
+import { NewAccountScreen } from './ui/screens/NewAccountScreen';
+import { BucketsScreen, ComingLater } from './ui/screens/Placeholders';
+import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { TabBar } from './ui/TabBar';
 
 export function App() {
+  const route = useRoute();
   const [status, setStatus] = useState<DbStatus | null>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
 
@@ -18,25 +20,53 @@ export function App() {
     void requestPersistentStorage().then(setPersisted);
   }, []);
 
+  let content;
+  if (status === null) {
+    content = <p className="muted">Opening your data…</p>;
+  } else if (!status.ok && route.name !== 'settings') {
+    content = (
+      <div className="result fail" role="alert">
+        <p>Your data couldn’t be opened while trying to {status.stage}.</p>
+        <p className="small">{status.error}</p>
+        <p className="small">If the app is open in another tab or window, close it and reload this page.</p>
+      </div>
+    );
+  } else {
+    switch (route.name) {
+      case 'buckets':
+        content = <BucketsScreen />;
+        break;
+      case 'accounts':
+        content = <AccountsScreen />;
+        break;
+      case 'account-new':
+        content = <NewAccountScreen />;
+        break;
+      case 'account':
+        content = <AccountScreen key={route.id} id={route.id} />;
+        break;
+      case 'transaction-new':
+        content = <AddTransactionScreen key={route.accountId} accountId={route.accountId} />;
+        break;
+      case 'strategies':
+        content = <ComingLater title="Strategies" />;
+        break;
+      case 'journal':
+        content = <ComingLater title="Journal" />;
+        break;
+      case 'settings':
+        content = <SettingsScreen status={status} persisted={persisted} />;
+        break;
+    }
+  }
+
   return (
-    <main className="app">
-      <header className="app-header">
-        <h1>{APP_NAME}</h1>
-        <p className="tagline">Track your investments against the plan you made for them.</p>
-      </header>
-      <section className="status" aria-label="Project status">
-        <p>
-          This is an early development build. There are no screens for entering data yet, so please don't enter real
-          financial information.
-        </p>
-        <p className={status ? (status.ok ? 'result ok' : 'result fail') : 'result'} role="status">
-          {describeStatus(status)}
-        </p>
-        <p className="muted small">
-          Keep data on this device:{' '}
-          {persisted === null ? 'not supported by this browser' : persisted ? 'granted' : 'not granted yet'}
-        </p>
-      </section>
-    </main>
+    <>
+      <main className="app">
+        <p className="dev-banner small">Early development build. Data entered now may need to be re-entered later.</p>
+        {content}
+      </main>
+      <TabBar current={route} />
+    </>
   );
 }

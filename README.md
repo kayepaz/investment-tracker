@@ -39,6 +39,7 @@ npm run dev        # start the dev server
 npm test           # run tests
 npm run typecheck  # TypeScript checks
 npm run build      # production build
+npm run e2e        # browser tests against the build (first: npx playwright install chromium)
 ```
 
 ## Contributing

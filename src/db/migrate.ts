@@ -18,6 +18,8 @@ export interface SqlConnection {
   run(sql: string, params: SqlValue[]): void;
   /** Returns the first column of the first row, or null when there are no rows. */
   queryValue(sql: string): unknown;
+  /** Returns all rows as plain objects keyed by column name. */
+  all(sql: string, params?: SqlValue[]): Record<string, SqlValue>[];
 }
 
 export type DatabaseKind = 'user' | 'cache';

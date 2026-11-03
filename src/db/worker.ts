@@ -8,14 +8,17 @@ import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import { migrate, type MigrationResult, type SqlConnection, type SqlValue } from './migrate';
 import { CACHE_MIGRATIONS } from './migrations/cache';
 import { USER_MIGRATIONS } from './migrations/user';
-import type { DbStatus, WorkerRequest } from './protocol';
+import { api, type ApiMethod } from './api';
+import type { DbStatus, WorkerRequest, WorkerResponse } from './protocol';
 
 export const POOL_NAME = 'investment-tracker';
 export const USER_DB_FILE = '/user.sqlite3';
 export const CACHE_DB_FILE = '/cache.sqlite3';
 
 type Oo1Db = {
-  exec(sql: string | { sql: string; bind: SqlValue[] }): unknown;
+  exec(
+    sql: string | { sql: string; bind?: SqlValue[]; rowMode?: 'object'; returnValue?: 'resultRows' },
+  ): unknown;
   selectValue(sql: string): unknown;
   close(): void;
 };
@@ -26,7 +29,7 @@ type SahPool = {
 };
 
 type WorkerScope = {
-  postMessage(message: DbStatus): void;
+  postMessage(message: WorkerResponse): void;
   onmessage: ((event: MessageEvent<WorkerRequest>) => void) | null;
 };
 const scope = self as unknown as WorkerScope;
@@ -37,9 +40,15 @@ function connection(db: Oo1Db): SqlConnection {
       db.exec(sql);
     },
     run: (sql, params) => {
-      db.exec({ sql, bind: params });
+      db.exec(params.length > 0 ? { sql, bind: params } : sql);
     },
     queryValue: (sql) => db.selectValue(sql) ?? null,
+    all: (sql, params = []) =>
+      db.exec(
+        params.length > 0
+          ? { sql, bind: params, rowMode: 'object', returnValue: 'resultRows' }
+          : { sql, rowMode: 'object', returnValue: 'resultRows' },
+      ) as Record<string, SqlValue>[],
   };
 }
 
@@ -83,9 +92,26 @@ async function open(): Promise<DbStatus> {
   }
 }
 
-scope.onmessage = (event) => {
-  if (event.data.type === 'open') {
+async function call(id: number, method: string, args: unknown[]): Promise<WorkerResponse> {
+  try {
     opening ??= open();
-    void opening.then((status) => scope.postMessage(status));
+    const status = await opening;
+    if (!status.ok || !userDb) throw new Error(`Storage is not available: ${status.ok ? 'not open' : status.error}`);
+    if (!Object.prototype.hasOwnProperty.call(api, method)) throw new Error(`Unknown operation ${method}`);
+    const fn = api[method as ApiMethod] as (db: SqlConnection, ...rest: unknown[]) => unknown;
+    return { type: 'result', id, ok: true, value: fn(connection(userDb), ...args) };
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    return { type: 'result', id, ok: false, error: { name: err.name, message: err.message } };
+  }
+}
+
+scope.onmessage = (event) => {
+  const request = event.data;
+  if (request.type === 'open') {
+    opening ??= open();
+    void opening.then((status) => scope.postMessage({ type: 'opened', status }));
+  } else if (request.type === 'call') {
+    void call(request.id, request.method, request.args).then((response) => scope.postMessage(response));
   }
 };
