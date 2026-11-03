@@ -538,3 +538,115 @@ button.danger {
 .price-status p {
   margin: 4px 0;
 }
+
+.warning-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: #fde7c7;
+  color: #6e3700;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.button-link.warn {
+  align-self: flex-start;
+  margin-top: 6px;
+  background: #fde7c7;
+  color: #6e3700;
+}
+
+.portfolio-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.warning-group h2 {
+  margin: 20px 0 8px;
+  font-size: 15px;
+  color: var(--color-muted);
+}
+
+.warning-card {
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1.5px solid #e5a55a;
+  border-radius: 12px;
+  background: #fff8ee;
+}
+
+.warning-card.hidden-warning {
+  border-color: #e6e8ec;
+  background: var(--color-subtle);
+}
+
+.warning-card p {
+  margin: 2px 0;
+}
+
+.rule-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-option {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #c8ced6;
+  border-radius: 18px;
+  font-size: 14px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid #eef0f3;
+}
+
+.tag-row:first-child {
+  border-top: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+}

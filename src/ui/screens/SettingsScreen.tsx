@@ -4,6 +4,7 @@ import type { DbStatus } from '../../db/protocol';
 import { DEFAULT_NATIVE_CURRENCY, SETTING_NATIVE_CURRENCY } from '../../db/repo';
 import { CURRENCIES } from '../currencies';
 import { ProvidersCard } from '../ProvidersCard';
+import { href } from '../router';
 import { useAsync } from '../useAsync';
 
 export function SettingsScreen({ status, persisted }: { status: DbStatus | null; persisted: boolean | null }) {
@@ -42,6 +43,19 @@ export function SettingsScreen({ status, persisted }: { status: DbStatus | null;
         </label>
         {saved && <p className="result ok small">Saved.</p>}
         {error && <p className="result fail small">{error}</p>}
+      </div>
+
+      <div className="card">
+        <h2>Rules and tags</h2>
+        <p className="muted small">Limits that raise warnings on the bucket tree, and the tags they use.</p>
+        <div className="button-row">
+          <a className="button-link secondary" href={href({ name: 'rules' })}>
+            Rules
+          </a>
+          <a className="button-link secondary" href={href({ name: 'tags' })}>
+            Tags
+          </a>
+        </div>
       </div>
 
       <ProvidersCard />

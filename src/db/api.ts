@@ -31,6 +31,23 @@ import {
 } from './cacheRepo';
 import type { SqlConnection } from './migrate';
 import {
+  createRule,
+  createTag,
+  deleteRule,
+  deleteTag,
+  latestWarningResponses,
+  listRules,
+  listSecurityTags,
+  listTags,
+  renameTag,
+  respondToWarning,
+  setRuleEnabled,
+  setSecurityTags,
+  unhideWarning,
+  updateRule,
+  type RuleInput,
+} from './rulesRepo';
+import {
   addTransaction,
   createAccount,
   deleteApiKey,
@@ -81,6 +98,25 @@ export const api = {
   assignHolding: (c: Connections, input: HoldingAssignment) => assignHolding(c.user, input, Date.now()),
   setManualPrice: (c: Connections, input: ManualPrice & { note?: string }) => setManualPrice(c.user, input, Date.now()),
   latestManualPrices: (c: Connections) => latestManualPrices(c.user),
+
+  // Tags, rules and warnings
+  listTags: (c: Connections) => listTags(c.user, Date.now()),
+  createTag: (c: Connections, name: string) => createTag(c.user, name, Date.now()),
+  renameTag: (c: Connections, id: string, name: string) => renameTag(c.user, id, name),
+  deleteTag: (c: Connections, id: string) => deleteTag(c.user, id),
+  listSecurityTags: (c: Connections) => listSecurityTags(c.user),
+  setSecurityTags: (c: Connections, securityId: string, tagIds: string[]) => setSecurityTags(c.user, securityId, tagIds),
+  listRules: (c: Connections) => listRules(c.user),
+  createRule: (c: Connections, input: RuleInput) => createRule(c.user, input, Date.now()),
+  updateRule: (c: Connections, id: string, input: RuleInput) => updateRule(c.user, id, input, Date.now()),
+  setRuleEnabled: (c: Connections, id: string, enabled: boolean) => setRuleEnabled(c.user, id, enabled, Date.now()),
+  deleteRule: (c: Connections, id: string) => deleteRule(c.user, id),
+  respondToWarning: (
+    c: Connections,
+    input: { warningKey: string; response: 'acknowledged' | 'snoozed'; note?: string; snoozeUntil?: string; today: string },
+  ) => respondToWarning(c.user, input, Date.now()),
+  unhideWarning: (c: Connections, warningKey: string, today: string) => unhideWarning(c.user, warningKey, today, Date.now()),
+  latestWarningResponses: (c: Connections) => latestWarningResponses(c.user),
 
   // Market cache
   saveFxRates: (c: Connections, rates: FxRate[], providerId: string) => saveFxRates(c.cache, rates, providerId, Date.now()),

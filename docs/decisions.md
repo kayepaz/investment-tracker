@@ -58,12 +58,16 @@ This is the record of product and design decisions for Investment Tracker. It wa
 - Kinds: concentration limits, allocation targets by tag with drift tolerance, cash/liquidity floor, currency exposure limits.
 - Each rule has a **scope**: the whole portfolio, or a bucket (and everything nested in it).
 - A rule broken by one holding shows its warning on that holding. A rule about a group shows on the bucket it applies to and rolls up.
-- Proposed: portfolio-scope group rules show on the total-portfolio header.
+- Portfolio-scope group rules show on the total-portfolio header.
+- A per-holding concentration limit counts a security across all accounts in the rule's scope (e.g. XIU in TFSA and RRSP together).
+- Holdings without a value are left out of rule calculations, and the warning says it may change.
+- Badges count each warning once per bucket, including warnings below it.
 
 ## Warnings
 
 - The user can acknowledge with a note (logged to the journal), snooze, or record the action taken.
 - No permanent per-holding exceptions.
+- Milestone 1 offers **snooze** (1 week, 1 month, 3 months) and **acknowledge** (optional note; hidden for 30 days). Hidden warnings can be shown again. Responses are kept for the journal. "Record action taken" comes with the Journal.
 
 ## Screens
 

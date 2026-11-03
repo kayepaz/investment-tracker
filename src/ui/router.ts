@@ -13,7 +13,12 @@ export type Route =
   | { name: 'transaction-new'; accountId: string }
   | { name: 'strategies' }
   | { name: 'journal' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'rules' }
+  | { name: 'rule-new' }
+  | { name: 'rule'; id: string }
+  | { name: 'tags' }
+  | { name: 'warnings' };
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
@@ -36,6 +41,14 @@ export function parseRoute(hash: string): Route {
       return { name: 'journal' };
     case 'settings':
       return { name: 'settings' };
+    case 'rules':
+      if (second === 'new') return { name: 'rule-new' };
+      if (second) return { name: 'rule', id: second };
+      return { name: 'rules' };
+    case 'tags':
+      return { name: 'tags' };
+    case 'warnings':
+      return { name: 'warnings' };
     default:
       return { name: 'buckets' };
   }
@@ -57,6 +70,10 @@ export function href(route: Route): string {
       return `#/accounts/${encodeURIComponent(route.id)}`;
     case 'transaction-new':
       return `#/accounts/${encodeURIComponent(route.accountId)}/add`;
+    case 'rule-new':
+      return '#/rules/new';
+    case 'rule':
+      return `#/rules/${encodeURIComponent(route.id)}`;
     default:
       return `#/${route.name}`;
   }
