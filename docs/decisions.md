@@ -15,6 +15,21 @@ This is the record of product and design decisions for Investment Tracker. It wa
 - One person (taxpayer) per database. A spouse or other household member uses a separate database.
 - No joint accounts in v1.
 
+## Storage: two databases
+
+- **User database:** everything the user created or that can't be re-downloaded: accounts, transactions, securities, buckets, tags, rules, warning responses, settings, API keys (own table), manual prices and valuations, and the FX rate used on each transaction.
+- **Market cache database:** everything downloaded from providers: price history, FX history, fetch log. It can be cleared and rebuilt at any time.
+- The cache is keyed by provider-neutral instrument keys (e.g. `XTSE:XIU`), never by user-database rows.
+- Tax figures use the FX rate stored on each transaction, so they never change when the cache is cleared or a provider revises history.
+- Each database has its own schema version and migrations. Details: [data-model.md](data-model.md).
+
+## Data conventions
+
+- IDs: UUID v7 text.
+- Money, prices, quantities and rates: exact decimal strings, never floating point.
+- Calendar dates: `YYYY-MM-DD` text. Record-keeping timestamps: UTC milliseconds.
+- Foreign keys enforced by SQLite; business rules in the app layer.
+
 ## Accounts and buckets
 
 - **Accounts** hold the transaction ledger and mirror real brokerage accounts (e.g. "Questrade TFSA"). Account type (TFSA, RRSP, non-registered, US accounts) lives on the account.
@@ -69,12 +84,17 @@ This is the record of product and design decisions for Investment Tracker. It wa
 ## Market data
 
 - Pluggable provider interface for prices, FX rates and event data. Users supply their own API keys.
-- First adapters:
-  - **EODHD** for end-of-day prices (free plan covers TSX; 20 calls/day; 1 year of history).
-  - **Bank of Canada Valet API** for FX rates (free, no key; ~24 currencies vs CAD, with history).
-- Later candidate: Finnhub for US earnings dates.
-- Prices and FX are cached locally: full history once per holding, then one daily update.
-- Rejected for v1: Twelve Data (free plan US-only, non-display use only), Alpha Vantage (25 calls/day, ~100 days of free daily history).
+- Providers must allow direct browser requests (CORS), since there is no server. Tested 2026-11-02 in Chrome:
+  - **Bank of Canada Valet API** (FX): works. Free, no key; ~24 currencies vs CAD, with history.
+  - **Alpha Vantage** (prices): works, covers TSX (`XIU.TRT`). Free plan: 25 requests/day, 100 days of daily history, full weekly history. **First price adapter.**
+  - **Finnhub** (prices): works; free plan US-only. **Optional second adapter for US holdings.**
+  - Financial Modeling Prep: reachable, but TSX requires a paid plan.
+  - EODHD: blocks browser requests (CORS). Not usable directly.
+- 200-day moving average: daily history accumulates in the cache from the first fetch; until 200 days exist, the 40-week moving average from weekly prices is used and labelled as such.
+- Within the 25 requests/day limit, about 20 holdings can update daily; more are spread across days, and US holdings use Finnhub when a key is set.
+- Prices and FX are cached locally: history once per holding, then one daily update.
+- If a future provider can't be reached from the browser, an optional user-run relay (e.g. a Cloudflare Worker holding the user's key) is the fallback; manual prices always work.
+- Rejected for v1: Twelve Data (free plan US-only, non-display use only).
 
 ## Tax
 
@@ -102,20 +122,22 @@ This is the record of product and design decisions for Investment Tracker. It wa
 
 ## Backup & restore
 
-- Format: a copy of the SQLite database, always including cached market data.
+- Format: one backup file containing both databases (user data and market cache).
 - Optional passphrase encryption. API keys are included only in encrypted backups.
 - Triggers: a manual button; a reminder after N days or M changes (user-adjustable); automatic backups to a chosen folder where the browser supports it.
-- Restore replaces current data after saving a safety copy.
-- Backups record their schema version; older backups are migrated on restore, newer ones are refused.
+- Restore replaces both databases after saving a safety copy.
+- Backups record each database's schema version; older backups are migrated on restore, newer ones are refused. A damaged cache part doesn't block restoring user data.
+- Backup reminders count changes to user data only.
 - The app requests persistent browser storage and validates backups before replacing anything.
 
 ## Platform & stack
 
 - PWA, single codebase, local SQLite, no backend.
 - React + TypeScript.
+- SQLite via sqlite-wasm in a Web Worker on the `opfs-sahpool` backend (no cross-origin isolation headers needed, so it works on GitHub Pages).
 - v1 is single-device.
-- Data conventions (money representation, IDs, dates) are decided with the data model.
+- Tested 2026-11-02: on-device storage works and persists in Chrome on Windows and on Android. iPhone Safari not yet tested.
 
 ## Accepted risks
 
-- **CORS:** the app calls provider APIs directly from the browser. If a provider blocks this, a user-run local helper may be needed.
+- **CORS:** the app calls provider APIs directly from the browser. EODHD blocks this; Alpha Vantage, Finnhub and the Bank of Canada allow it. New providers must be tested in a browser.
