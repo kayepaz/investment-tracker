@@ -104,9 +104,11 @@ export function ManageBucketsScreen() {
   async function add(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    const submitted = name;
     try {
-      await db('createBucket', { name, parentId: parentId || null });
-      setName('');
+      await db('createBucket', { name: submitted, parentId: parentId || null });
+      // Clear the box, unless the user has already started typing the next name.
+      setName((current) => (current === submitted ? '' : current));
       reload();
     } catch (e) {
       setError(errorMessage(e));
