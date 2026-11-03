@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Decimal } from '../../money/decimal';
 import type { BucketNode, HoldingRow } from '../../portfolio/tree';
+import type { Evaluation } from '../../rules/evaluate';
 import { refreshFxRatesIfStale } from '../../market/refresh';
 import { providerById } from '../../market/providers';
 import { updatePrices, type PriceUpdateSummary } from '../../market/updatePrices';
@@ -24,13 +25,22 @@ function Meta({ share, change, gain, currency }: { share: Decimal | null; change
   );
 }
 
-function HoldingItem({ row, depth, currency }: { row: HoldingRow; depth: number; currency: string }) {
+function Badge({ count, label }: { count: number | undefined; label: string }) {
+  if (!count) return null;
+  return (
+    <span className="warning-badge" aria-label={`${count} ${label}${count === 1 ? '' : 's'}`}>
+      {count}
+    </span>
+  );
+}
+
+function HoldingItem({ row, depth, currency, warnings }: { row: HoldingRow; depth: number; currency: string; warnings: number | undefined }) {
   return (
     <li>
       <a className="tree-row holding" style={{ paddingLeft: 16 + depth * 20 }} href={href({ name: 'holding', accountId: row.accountId, securityId: row.securityId })}>
         <span className="tree-main">
           <span className="tree-name">
-            {row.label} <span className="muted small">· {row.accountName}</span>
+            {row.label} <span className="muted small">· {row.accountName}</span> <Badge count={warnings} label="warning" />
           </span>
           {row.missing === null ? (
             <Meta share={row.share} change={row.changePercent} gain={row.gain} currency={currency} />
@@ -50,12 +60,14 @@ function BucketItem({
   currency,
   collapsed,
   toggle,
+  evaluation,
 }: {
   node: BucketNode;
   depth: number;
   currency: string;
   collapsed: Set<string>;
   toggle: (id: string) => void;
+  evaluation: Evaluation;
 }) {
   const isCollapsed = collapsed.has(node.bucket.id);
   const hasContent = node.children.length > 0 || node.holdings.length > 0;
@@ -76,7 +88,7 @@ function BucketItem({
         </button>
         <span className="tree-main">
           <span className={`tree-name strong${node.bucket.isUnassigned ? ' unassigned' : ''}`}>
-            {node.bucket.name}
+            {node.bucket.name} <Badge count={evaluation.bucketCounts.get(node.bucket.id)} label="warning" />
             {node.unvalued > 0 && <span className="badge-warn small"> {node.unvalued} without a value</span>}
           </span>
           <Meta share={node.share} change={node.changePercent} gain={node.gain} currency={currency} />
@@ -86,10 +98,10 @@ function BucketItem({
       {!isCollapsed && hasContent && (
         <ul className="plain">
           {node.children.map((child) => (
-            <BucketItem key={child.bucket.id} node={child} depth={depth + 1} currency={currency} collapsed={collapsed} toggle={toggle} />
+            <BucketItem key={child.bucket.id} node={child} depth={depth + 1} currency={currency} collapsed={collapsed} toggle={toggle} evaluation={evaluation} />
           ))}
           {node.holdings.map((row) => (
-            <HoldingItem key={row.key} row={row} depth={depth + 1} currency={currency} />
+            <HoldingItem key={row.key} row={row} depth={depth + 1} currency={currency} warnings={evaluation.holdingCounts.get(row.key)} />
           ))}
         </ul>
       )}
@@ -191,7 +203,8 @@ export function BucketsScreen() {
   if (state.status === 'loading') return <p className="muted">Loading…</p>;
   if (state.status === 'error') return <p className="result fail">{state.message}</p>;
 
-  const { tree, fxDate, problemCount } = state.data;
+  const { tree, fxDate, problemCount, evaluation } = state.data;
+  const portfolioWarnings = evaluation.warnings.filter((w) => w.target.kind === 'portfolio' && !w.hiddenBy);
   const currency = tree.nativeCurrency;
 
   return (
@@ -208,6 +221,20 @@ export function BucketsScreen() {
           <span className="badge-warn small">
             {tree.total.unvalued} holding{tree.total.unvalued === 1 ? '' : 's'} not counted yet: no price or exchange rate
           </span>
+        )}
+        {portfolioWarnings.length > 0 && (
+          <ul className="plain portfolio-warnings">
+            {portfolioWarnings.map((w) => (
+              <li key={w.key} className="badge-warn small">
+                {w.message}
+              </li>
+            ))}
+          </ul>
+        )}
+        {evaluation.visibleCount > 0 && (
+          <a className="button-link warn" href={href({ name: 'warnings' })}>
+            Show all warnings · {evaluation.visibleCount}
+          </a>
         )}
         {problemCount > 0 && (
           <a className="small" href={href({ name: 'accounts' })}>
@@ -238,7 +265,7 @@ export function BucketsScreen() {
           <p className="muted small tree-legend">Value · share of total · change since purchase · gain/loss</p>
           <ul className="plain tree">
             {tree.roots.map((node) => (
-              <BucketItem key={node.bucket.id} node={node} depth={0} currency={currency} collapsed={collapsed} toggle={toggle} />
+              <BucketItem key={node.bucket.id} node={node} depth={0} currency={currency} collapsed={collapsed} toggle={toggle} evaluation={evaluation} />
             ))}
           </ul>
         </>

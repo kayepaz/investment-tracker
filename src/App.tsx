@@ -10,7 +10,11 @@ import { BucketsScreen } from './ui/screens/BucketsScreen';
 import { HoldingScreen } from './ui/screens/HoldingScreen';
 import { ManageBucketsScreen } from './ui/screens/ManageBucketsScreen';
 import { ComingLater } from './ui/screens/Placeholders';
+import { RuleFormScreen } from './ui/screens/RuleFormScreen';
+import { RulesScreen } from './ui/screens/RulesScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { TagsScreen } from './ui/screens/TagsScreen';
+import { WarningsScreen } from './ui/screens/WarningsScreen';
 import { TabBar } from './ui/TabBar';
 
 export function App() {
@@ -65,6 +69,21 @@ export function App() {
         break;
       case 'settings':
         content = <SettingsScreen status={status} persisted={persisted} />;
+        break;
+      case 'rules':
+        content = <RulesScreen />;
+        break;
+      case 'rule-new':
+        content = <RuleFormScreen key="new" id={null} />;
+        break;
+      case 'rule':
+        content = <RuleFormScreen key={route.id} id={route.id} />;
+        break;
+      case 'tags':
+        content = <TagsScreen />;
+        break;
+      case 'warnings':
+        content = <WarningsScreen />;
         break;
     }
   }

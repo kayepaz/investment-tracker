@@ -19,7 +19,7 @@ const TABS: Tab[] = [
   {
     route: { name: 'buckets' },
     label: 'Buckets',
-    matches: ['buckets', 'buckets-manage', 'holding'],
+    matches: ['buckets', 'buckets-manage', 'holding', 'warnings'],
     icon: (
       <svg {...iconProps}>
         <path d="M3 6h18" />
@@ -66,7 +66,7 @@ const TABS: Tab[] = [
   {
     route: { name: 'settings' },
     label: 'Settings',
-    matches: ['settings'],
+    matches: ['settings', 'rules', 'rule-new', 'rule', 'tags'],
     icon: (
       <svg {...iconProps}>
         <circle cx="12" cy="12" r="3" />

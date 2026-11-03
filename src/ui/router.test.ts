@@ -25,6 +25,11 @@ describe('router', () => {
       { name: 'strategies' },
       { name: 'journal' },
       { name: 'settings' },
+      { name: 'rules' },
+      { name: 'rule-new' },
+      { name: 'rule', id: 'r1' },
+      { name: 'tags' },
+      { name: 'warnings' },
     ];
     for (const route of routes) {
       expect(parseRoute(href(route))).toEqual(route);

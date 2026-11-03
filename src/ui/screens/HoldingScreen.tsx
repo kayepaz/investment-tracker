@@ -6,6 +6,7 @@ import { formatDate, formatMoney, formatNumber, formatPercent, formatSignedMoney
 import { loadPortfolio } from '../portfolioData';
 import { href } from '../router';
 import { useAsync } from '../useAsync';
+import { WarningCard } from '../WarningCard';
 
 function findHolding(nodes: BucketNode[], key: string): { row: HoldingRow; bucketId: string } | null {
   for (const node of nodes) {
@@ -26,7 +27,7 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
   if (state.status === 'loading') return <p className="muted">Loading…</p>;
   if (state.status === 'error') return <p className="result fail">{state.message}</p>;
 
-  const { tree, buckets, securities } = state.data;
+  const { tree, buckets, securities, tags, tagsBySecurity, evaluation } = state.data;
   const found = findHolding(tree.roots, `${accountId}|${securityId}`);
   const security = securities.get(securityId);
   if (!found || !security) {
@@ -40,6 +41,21 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
   const { row, bucketId } = found;
   const currency = tree.nativeCurrency;
   const options = flattenBuckets(buckets);
+
+  const holdingWarnings = evaluation.warnings.filter((w) => w.target.kind === 'holdings' && w.target.holdingKeys.includes(row.key));
+  const currentTags = tagsBySecurity.get(securityId) ?? new Set<string>();
+
+  async function toggleTag(tagId: string, on: boolean) {
+    const next = new Set(currentTags);
+    if (on) next.add(tagId);
+    else next.delete(tagId);
+    try {
+      await db('setSecurityTags', securityId, [...next]);
+      reload();
+    } catch (e) {
+      setMessage({ ok: false, text: errorMessage(e) });
+    }
+  }
 
   async function savePrice(event: FormEvent) {
     event.preventDefault();
@@ -101,6 +117,15 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
 
       {message && <p className={`result small ${message.ok ? 'ok' : 'fail'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
 
+      {holdingWarnings.length > 0 && (
+        <div className="card">
+          <h2>Warnings</h2>
+          {holdingWarnings.map((w) => (
+            <WarningCard key={w.key} warning={w} onChanged={reload} />
+          ))}
+        </div>
+      )}
+
       {!row.isCash && (
         <form className="card form" onSubmit={(event) => void savePrice(event)} noValidate>
           <h2>Set price</h2>
@@ -119,6 +144,23 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
           </div>
           <p className="hint">The newer of your price and the downloaded one is used; on the same day, yours wins.</p>
         </form>
+      )}
+
+      {!row.isCash && (
+        <div className="card">
+          <h2>Tags</h2>
+          <div className="tag-picker">
+            {tags.map((tag) => (
+              <label key={tag.id} className="tag-option">
+                <input type="checkbox" checked={currentTags.has(tag.id)} onChange={(e) => void toggleTag(tag.id, e.target.checked)} />
+                {tag.name}
+              </label>
+            ))}
+          </div>
+          <p className="hint">
+            Tags apply to {row.label} in every account. <a href={href({ name: 'tags' })}>Manage tags</a>
+          </p>
+        </div>
       )}
 
       <div className="card">
