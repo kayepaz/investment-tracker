@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 
 export type Route =
   | { name: 'buckets' }
+  | { name: 'buckets-manage' }
+  | { name: 'holding'; accountId: string; securityId: string }
   | { name: 'accounts' }
   | { name: 'account-new' }
   | { name: 'account'; id: string }
@@ -17,6 +19,12 @@ export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   const [first, second, third] = parts;
   switch (first) {
+    case 'buckets':
+      if (second === 'manage') return { name: 'buckets-manage' };
+      return { name: 'buckets' };
+    case 'holding':
+      if (second && third) return { name: 'holding', accountId: second, securityId: third };
+      return { name: 'buckets' };
     case 'accounts':
       if (second === 'new') return { name: 'account-new' };
       if (second && third === 'add') return { name: 'transaction-new', accountId: second };
@@ -37,6 +45,10 @@ export function href(route: Route): string {
   switch (route.name) {
     case 'buckets':
       return '#/';
+    case 'buckets-manage':
+      return '#/buckets/manage';
+    case 'holding':
+      return `#/holding/${encodeURIComponent(route.accountId)}/${encodeURIComponent(route.securityId)}`;
     case 'accounts':
       return '#/accounts';
     case 'account-new':

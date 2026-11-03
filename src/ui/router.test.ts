@@ -16,6 +16,8 @@ describe('router', () => {
   it('round-trips every route through its URL', () => {
     const routes: Route[] = [
       { name: 'buckets' },
+      { name: 'buckets-manage' },
+      { name: 'holding', accountId: 'a/1', securityId: 's 2' },
       { name: 'accounts' },
       { name: 'account-new' },
       { name: 'account', id: '018bcfe5-6800-7000-8000-000000000000' },

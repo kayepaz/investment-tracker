@@ -6,7 +6,10 @@ import { AccountScreen } from './ui/screens/AccountScreen';
 import { AccountsScreen } from './ui/screens/AccountsScreen';
 import { AddTransactionScreen } from './ui/screens/AddTransactionScreen';
 import { NewAccountScreen } from './ui/screens/NewAccountScreen';
-import { BucketsScreen, ComingLater } from './ui/screens/Placeholders';
+import { BucketsScreen } from './ui/screens/BucketsScreen';
+import { HoldingScreen } from './ui/screens/HoldingScreen';
+import { ManageBucketsScreen } from './ui/screens/ManageBucketsScreen';
+import { ComingLater } from './ui/screens/Placeholders';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { TabBar } from './ui/TabBar';
 
@@ -35,6 +38,12 @@ export function App() {
     switch (route.name) {
       case 'buckets':
         content = <BucketsScreen />;
+        break;
+      case 'buckets-manage':
+        content = <ManageBucketsScreen />;
+        break;
+      case 'holding':
+        content = <HoldingScreen key={`${route.accountId}|${route.securityId}`} accountId={route.accountId} securityId={route.securityId} />;
         break;
       case 'accounts':
         content = <AccountsScreen />;
