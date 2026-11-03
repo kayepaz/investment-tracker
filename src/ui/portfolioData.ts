@@ -4,6 +4,7 @@ import type { Security } from '../db/repo';
 import { DEFAULT_NATIVE_CURRENCY, SETTING_NATIVE_CURRENCY, cashSecurityResolver, toTransactionInputs } from '../db/repo';
 import { computePositions } from '../holdings/positions';
 import { Decimal } from '../money/decimal';
+import { choosePrice } from '../portfolio/prices';
 import { buildPortfolioTree, type PortfolioTree, type PriceQuote } from '../portfolio/tree';
 
 export type PortfolioData = {
@@ -17,12 +18,13 @@ export type PortfolioData = {
 };
 
 export async function loadPortfolio(): Promise<PortfolioData> {
-  const [buckets, assignments, transactions, accounts, manualPrices, fxRates, native] = await Promise.all([
+  const [buckets, assignments, transactions, accounts, manualPrices, providerPrices, fxRates, native] = await Promise.all([
     db('listBuckets'),
     db('listAssignments'),
     db('listAllTransactions'),
     db('listAccounts'),
     db('latestManualPrices'),
+    db('latestDailyPrices'),
     db('latestFxRates'),
     db('getSetting', SETTING_NATIVE_CURRENCY),
   ]);
@@ -32,9 +34,15 @@ export async function loadPortfolio(): Promise<PortfolioData> {
   });
   const securities = new Map(transactions.map((t) => [t.securityId, t.security]));
 
+  // For each security, the newer of the price entered by hand and the one downloaded.
+  const manualById = new Map(manualPrices.map((p) => [p.securityId, { price: p.price, date: p.priceDate }]));
+  const providerByKey = new Map(
+    providerPrices.map((p) => [p.instrumentKey, { price: p.close, date: p.priceDate, providerId: p.providerId }]),
+  );
   const prices = new Map<string, PriceQuote>();
-  for (const p of manualPrices) {
-    prices.set(p.securityId, { price: Decimal.parse(p.price), date: p.priceDate, source: 'manual' });
+  for (const security of securities.values()) {
+    const chosen = choosePrice(manualById.get(security.id), providerByKey.get(security.instrumentKey));
+    if (chosen) prices.set(security.id, chosen);
   }
 
   const cadPerUnit = new Map<string, Decimal>();

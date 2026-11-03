@@ -511,3 +511,30 @@ button.danger {
 .bucket-edit:first-child {
   border-top: 0;
 }
+
+.provider-row {
+  padding-top: 12px;
+  border-top: 1px solid #eef0f3;
+}
+
+.provider-row:first-of-type {
+  border-top: 0;
+}
+
+.provider-row h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.align-end {
+  align-self: flex-end;
+  margin: 0;
+}
+
+.price-status {
+  margin-top: 12px;
+}
+
+.price-status p {
+  margin: 4px 0;
+}
