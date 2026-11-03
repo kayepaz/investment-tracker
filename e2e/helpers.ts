@@ -38,7 +38,8 @@ export async function buyNewSecurity(
 ) {
   await page.getByRole('link', { name: '+ Add transaction' }).click();
   await expect(page.getByRole('heading', { name: 'Add transaction' })).toBeVisible();
-  const security = page.getByLabel('Security', { exact: true });
+  // A select's accessible name includes its current choice, so match the label's start.
+  const security = page.getByRole('combobox', { name: /^Security/ });
   if ((await security.inputValue()) !== 'new') await security.selectOption('new');
   if (opts.exchange) await page.getByLabel('Exchange').selectOption(opts.exchange);
   await page.getByLabel('Ticker symbol').fill(opts.symbol);
@@ -53,7 +54,7 @@ export async function buyNewSecurity(
 
 /** The value of an <option> whose text contains `text`, for selects with indented labels. */
 export async function optionValue(page: Page, selectLabel: string, text: string, index = 0) {
-  const select = page.getByLabel(selectLabel, { exact: true }).nth(index);
+  const select = page.getByRole('combobox', { name: new RegExp(`^${selectLabel}`) }).nth(index);
   const value = await select.locator('option', { hasText: text }).first().getAttribute('value');
   if (value === null) throw new Error(`No option "${text}" in ${selectLabel}`);
   return { select, value };
