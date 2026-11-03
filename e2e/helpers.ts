@@ -44,7 +44,7 @@ export async function buyNewSecurity(
   if (opts.exchange) await page.getByLabel('Exchange').selectOption(opts.exchange);
   await page.getByLabel('Ticker symbol').fill(opts.symbol);
   await page.getByLabel('Name', { exact: true }).fill(opts.name);
-  await page.getByLabel('Trade date').fill('2026-11-02');
+  await page.getByLabel('Trade date', { exact: true }).fill('2026-11-02');
   await page.getByLabel('Quantity (units)').fill(opts.quantity);
   await page.getByLabel('Price per unit').fill(opts.price);
   if (opts.fxRate) await page.getByLabel(/exchange rate on the trade date/).fill(opts.fxRate);

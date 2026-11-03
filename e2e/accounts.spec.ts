@@ -31,7 +31,7 @@ test('creates an account, buys, refuses an oversell, and keeps data after reload
   await page.getByLabel('Ticker symbol').fill('XIU');
   await page.getByLabel('Name', { exact: true }).fill('iShares S&P/TSX 60 Index ETF');
   await page.getByLabel('Kind').selectOption('etf');
-  await page.getByLabel('Trade date').fill('2026-11-02');
+  await page.getByLabel('Trade date', { exact: true }).fill('2026-11-02');
   await page.getByLabel('Quantity (units)').fill('10');
   await page.getByLabel('Price per unit').fill('54.07');
   await page.getByRole('button', { name: 'Save transaction' }).click();
@@ -43,7 +43,7 @@ test('creates an account, buys, refuses an oversell, and keeps data after reload
   // Selling more than is held is refused with a readable message, and nothing is saved.
   await page.getByRole('link', { name: '+ Add transaction' }).click();
   await page.getByLabel('Type').selectOption('sell');
-  await page.getByLabel('Trade date').fill('2026-11-03');
+  await page.getByLabel('Trade date', { exact: true }).fill('2026-11-03');
   await page.getByLabel('Quantity (units)').fill('20');
   await page.getByLabel(/Total proceeds/).fill('1100');
   await page.getByRole('button', { name: 'Save transaction' }).click();

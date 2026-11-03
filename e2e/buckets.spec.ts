@@ -31,6 +31,7 @@ test('values holdings, nests buckets and moves a holding into one', async ({ pag
   await page.getByRole('link', { name: 'Manage buckets' }).click();
   await page.getByLabel('Name', { exact: true }).first().fill('Retirement');
   await page.getByRole('button', { name: 'Add bucket' }).click();
+  await expect(page.locator('.bucket-edit')).toHaveCount(2);
   await page.getByLabel('Name', { exact: true }).first().fill('TFSA');
   const parent = await optionValue(page, 'Inside', 'Retirement');
   await parent.select.selectOption(parent.value);
