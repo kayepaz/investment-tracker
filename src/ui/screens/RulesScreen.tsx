@@ -41,6 +41,8 @@ export function RulesScreen() {
   const [state, reload] = useAsync(loadRules, []);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  // On/off shows immediately, before the save finishes.
+  const [enabled, setEnabled] = useState<Record<string, boolean>>({});
 
   async function run(work: () => Promise<unknown>) {
     setError(null);
@@ -93,7 +95,15 @@ export function RulesScreen() {
               </div>
               <div className="list-side">
                 <label className="toggle small">
-                  <input type="checkbox" checked={rule.enabled} onChange={(e) => void run(() => db('setRuleEnabled', rule.id, e.target.checked))} />
+                  <input
+                    type="checkbox"
+                    checked={enabled[rule.id] ?? rule.enabled}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setEnabled((current) => ({ ...current, [rule.id]: on }));
+                      void run(() => db('setRuleEnabled', rule.id, on));
+                    }}
+                  />
                   On
                 </label>
                 {confirming === rule.id ? (

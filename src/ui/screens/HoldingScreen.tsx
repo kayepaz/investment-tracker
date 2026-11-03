@@ -23,6 +23,8 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
   const [price, setPrice] = useState('');
   const [priceDate, setPriceDate] = useState(today());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  // Tag choices show immediately, before the save finishes.
+  const [tagOverride, setTagOverride] = useState<Set<string> | null>(null);
 
   if (state.status === 'loading') return <p className="muted">Loading…</p>;
   if (state.status === 'error') return <p className="result fail">{state.message}</p>;
@@ -43,12 +45,13 @@ export function HoldingScreen({ accountId, securityId }: { accountId: string; se
   const options = flattenBuckets(buckets);
 
   const holdingWarnings = evaluation.warnings.filter((w) => w.target.kind === 'holdings' && w.target.holdingKeys.includes(row.key));
-  const currentTags = tagsBySecurity.get(securityId) ?? new Set<string>();
+  const currentTags = tagOverride ?? tagsBySecurity.get(securityId) ?? new Set<string>();
 
   async function toggleTag(tagId: string, on: boolean) {
     const next = new Set(currentTags);
     if (on) next.add(tagId);
     else next.delete(tagId);
+    setTagOverride(next);
     try {
       await db('setSecurityTags', securityId, [...next]);
       reload();
