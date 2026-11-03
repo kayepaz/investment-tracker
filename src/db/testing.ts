@@ -5,7 +5,6 @@ import type { SqlConnection, SqlValue } from './migrate';
 
 export type TestDb = SqlConnection & {
   raw: DatabaseSync;
-  all(sql: string, params?: SqlValue[]): Record<string, unknown>[];
 };
 
 export function openTestDb(): TestDb {
@@ -21,6 +20,6 @@ export function openTestDb(): TestDb {
       return row ? Object.values(row)[0] : null;
     },
     // node:sqlite returns null-prototype rows; copy them into plain objects for comparisons.
-    all: (sql, params = []) => raw.prepare(sql).all(...params).map((row) => ({ ...row })),
+    all: (sql, params = []) => raw.prepare(sql).all(...params).map((row) => ({ ...row }) as Record<string, SqlValue>),
   };
 }
