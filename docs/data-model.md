@@ -62,7 +62,7 @@ These apply to both databases. They are hard to change later, so they need an is
 | `schema_migrations` | Applied migrations |
 
 Transactions store a non-negative gross `amount` plus `fee` and `withholding_tax`; the `type` gives the direction.
-A *holding* is not stored: it is derived from an account's transactions for a security.
+A *holding* is not stored: it is derived from an account's transactions for a security, with cash moving automatically. See [transactions.md](transactions.md).
 
 Later migrations add strategies and goals, the journal, contribution room and event data.
 

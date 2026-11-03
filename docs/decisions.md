@@ -79,6 +79,7 @@ This is the record of product and design decisions for Investment Tracker. It wa
 
 - Sources: manual entry, brokerage CSV import, live prices via the user's own API key, manual valuations for non-market assets.
 - Full transaction history per account. A snapshot entry (quantity + average cost) is recorded as an opening-balance transaction.
+- **Automatic cash:** buys, sells, dividends, fees and so on move the account's cash in the transaction currency automatically. New accounts start with an opening cash balance. Details: [transactions.md](transactions.md).
 - Brokerage CSV importers are deferred. Planned first: CIBC Investor's Edge and Questrade. RBC Dominion Securities is not in v1.
 
 ## Market data
