@@ -29,6 +29,7 @@ npm run dev
    npm run typecheck
    npm test
    npm run build
+   npm run e2e   # browser tests; first time: npx playwright install chromium
    ```
 
 5. Open a pull request that explains **what** changed and **why**. Link the issue it addresses.
